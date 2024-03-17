@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.9.4/cytoscape.min.js"></script>
+    <script src="./scripts/Node.js"></script>
+    <script src="./scripts/Edge.js"></script>
+    <script src="./scripts/Graph.js"></script>
+    <script src="./scripts/GraphVisualizer.js"></script>
+    <script src="./scripts/Algorithm.js"></script>
+    <title>Визуализатор алгоритмов на графах</title>
+</head>
+<body>
+<!-- Меню --> 
+<div class="menu">
+    <ul id="menu">
+        <li id="exampleGraph">Выбрать граф из примера</li>
+        <li id="addNode">Добавить вершину</li>
+        <li id="addEdge">Добавить ребро</li>
+        <li>
+            <select id="direction" name="direction" onchange="сhangeDirection()">
+                <option value="false">Неориентированный</option>
+                <option value="true">Ориентированный</option> 
+            </select>
+        </li>
+        <li id="changeEdgeWeight">Изменить вес рёбер</li>
+        <li id="getAdjacencyMatrix">Матрица смежности</li>
+        <li id="getIncidenceMatrix">Матрица инцидентности</li>
+        <li>
+            <select id="algorithm" name="algorithm" onchange="chooseAlgorithm()">
+                <option hidden>Выбрать алгоритм</option> 
+                <option value="kruskal">Алгоритм Крускала</option>
+                <option value="dijkstra">Алгоритм Дейкстры</option>
+                <option value="demucron">Алгоритм Демукрона</option> 
+            </select>
+        </li>
+        <li id="clearGraph">Очистить граф</li>
+    </ul>
+    <p id="descriptionGraph"></p>
+</div>
+
+<!-- Поле с графом -->
+<div id="cy"></div>
+
+<!-- Модальное окно с предложением изменить вес рёбер -->
+<div id="EdgeWeight" class="modal">
+    <div class="modal-content">
+        <span class="closeEdgeWeight">&times;</span>
+        <h2>Изменить вес ребра</h2>
+        <div>
+            <label for="Edges">Выберите ребро:</label>
+            <select id="Edges"></select>
+            <input type="number" id="newWeight" placeholder="Введите новый вес ребра">
+        </div>
+        <div>
+            <button class='btn' id="changeWeightBtn">Применить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно с предложением добавить ребро -->
+<div id="AddEdge" class="modal">
+    <div class="modal-content">
+        <span class="closeAddEdge">&times;</span>
+        <h2>Добавить ребро</h2>
+        <div>
+            <label for="NodesSourse">Выберите начальную вершину:</label>
+            <select id="NodesSourse"></select>
+        </div>
+        <div>
+            <label for="NodesTarget">Выберите конечную вершину:</label>
+            <select id="NodesTarget"></select>
+        </div>
+        <div>
+            <button  class='btn' id="addEdgeBtn">Применить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно с матрицей смежности -->
+<div id="AdjacencyMatrix" class="modal">
+    <div class="modal-content">
+        <span class="closeAdjacencyMatrix">&times;</span>
+        <h2>Матрица смежности</h2>
+        <table id="adjacencyMatrix"></table>
+    </div>
+</div>
+
+<!-- Модальное окно с матрицей инцидентности -->
+<div id="IncidenceMatrix" class="modal">
+    <div class="modal-content">
+        <span class="closeIncidenceMatrix">&times;</span>
+        <h2>Матрица инцидентности</h2>
+        <table id="incidenceMatrix"></table>
+    </div>
+</div>
+
+<!-- Модальное окно с примерами графов -->
+<div id="ExampleGraph" class="modal">
+    <div class="modal-content">
+        <span class="closeExampleGraph">&times;</span>
+        <div>
+            <div id="UndirectedUnweightedGraph" class="image-box">
+                <p>Неориентированный невзвешенный граф</p>
+                <img src="./img/example_graphs/UndirectedUnweightedGraph.png" alt="Неориентированный невзвешенный граф">
+            </div>
+            <div id="UndirectedWeightedGraph" class="image-box">
+                <p>Неориентированный взвешенный граф</p>
+                <img src="./img/example_graphs/UndirectedWeightedGraph.png" alt="Неориентированный взвешенный граф">
+            </div>
+        </div>
+        <div>
+            <div id="DirectedUnweightedGraph" class="image-box">
+                <p>Ориентированный невзвешенный граф</p>
+                <img src="./img/example_graphs/DirectedUnweightedGraph.png" alt="Ориентированный невзвешенный граф">
+            </div>
+            <div id="DirectedWeightedGraph" class="image-box">
+                <p>Ориентированный взвешенный граф</p>
+                <img src="./img/example_graphs/DirectedWeightedGraph.png" alt="Ориентированный взвешенный граф">
+            </div>
+        </div>
+    </div>
+  </div>
+
+<!-- Модальное окно для задания начальной и конечной вершины графа для поиска кратчайшего пути между ними с помощью алгоритма Дейкстры -->
+<div id="DijkstraWindow" class="modal">
+    <div class="modal-content">
+        <div>
+            <span class="closeDijkstraWindow">&times;</span>
+            <h3>Выберите вершины, чтобы найти кратчайшее расстояние между ними с помощью алгоритма Дейкстры</h3>
+            <div>
+                <label for="NodesSourseDijkstra">Выберите начальную вершину:</label>
+                <select id="NodesSourseDijkstra"></select>
+            </div>
+            <div>
+                <label for="NodesTargetDijkstra">Выберите конечную вершину:</label>
+                <select id="NodesTargetDijkstra"></select>
+            </div>
+        </div>
+        <div>
+            <button  class='btn' id="runDijkstra">Найти кратчайшее расстояние</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    //Создаём объект класса GraphVisualizer (graph, cy)
+    let visualizer = new GraphVisualizer('cy');
+
+    function UpdateGraph(){
+        visualizer.VisualizeGraph(); //Визуализируем граф
+        changeGraph(); //Показываем изменения
+    }
+    UpdateGraph();
+    
+    //Список вершин
+    function GetNodesList(nameElement){
+        let nodesList = document.getElementById(nameElement);
+        nodesList.innerHTML = "";
+        for (let node of visualizer.graph.Nodes){
+            let option = document.createElement("option");
+            option.text = node.NameNode;
+            option.value = node.NameNode;
+            nodesList.add(option);
+        }
+        return nodesList;
+    }
+
+    //Список рёбер
+    function GetEdgesList(){
+        let edgesList = document.getElementById("Edges");
+        edgesList.innerHTML = "";
+        for (let edge of visualizer.graph.Edges){
+            let option = document.createElement("option");
+            option.text = edge.NameEdge + ", Текущий вес: " + edge.Weight;
+            option.value = edge.NameEdge;
+            edgesList.add(option);
+            }
+        return edgesList;
+    }
+
+    //Работа с мышкой
+    //Добавление вершины по клику левой кнопки мыши
+    visualizer.cy.on('tap', function(event){
+        if(event.target === visualizer.cy){
+            const position = event.position;
+            //Проверяем, есть ли вершина в указанных координатах
+            const isNodeAtPosition = visualizer.cy.$('node').some(node => {
+                const nodePosition = node.position();
+                return Math.abs(nodePosition.x - position.x) < 10 && Math.abs(nodePosition.y - position.y) < 10;
+            });
+
+            //Если нет, добавляем вершину
+            if (!isNodeAtPosition){
+                let lenNodes= visualizer.graph.GetCountNodes();
+                visualizer.graph.AddNode(position.x, position.y);
+                if (lenNodes != visualizer.graph.GetCountNodes()){
+                    visualizer.AddNodeCY(visualizer.graph.Nodes[visualizer.graph.GetCountNodes()-1]);
+                }
+                changeGraph(); //Показываем изменения
+            }
+        }
+    });
+
+    //Удаление вершины по клику правой кнопки мыши
+    visualizer.cy.on('cxttap', 'node', function(event){
+        let node = event.target;
+        let nodeName = node.id();
+        visualizer.graph.DeleteNode(nodeName);
+        visualizer.DeleteNodeCY(node);
+        changeGraph(); //Показываем изменения
+    });
+
+    //Перемещение вершин (изменение координат вершин)
+    visualizer.cy.on('drag', 'node', function(event){
+        let node = event.target;
+        let nodeName = node.id();
+        let position = node.position();
+        visualizer.graph.Nodes.find(node => node.NameNode === nodeName).ChangingСoordinates(position.x, position.y);
+    });
+
+    //Добавление ребра
+    let source = null;
+    visualizer.cy.on('tap', 'node', function(event){
+        let target = event.target;
+        if (!source) {
+            source = target;
+        } 
+        else {
+            let lenEdges = visualizer.graph.GetCountEdges();
+            visualizer.graph.AddEdge(source.id(), target.id());
+            if (lenEdges != visualizer.graph.GetCountEdges()){
+                visualizer.AddEdgeCY(visualizer.graph.Edges[visualizer.graph.GetCountEdges()-1]);
+            }
+            changeGraph(); //Показываем изменения
+            source = null;
+        }
+    });
+
+    //Удаление ребра по клику правой кнопки мыши
+    visualizer.cy.on('cxttap', 'edge', function(event){
+        visualizer.graph.DeleteEdge(event.target.id());
+        visualizer.DeleteEdgeCY(event.target);
+        changeGraph();
+    });
+
+
+    //Меню
+    //Выбрать граф
+    function ShowModalWindow(modal, id_close){
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+        
+        document.getElementsByClassName(id_close)[0].onclick = function() {
+            modal.style.display = "none";
+        }
+    }
+
+    document.getElementById('exampleGraph').addEventListener('click', function() {
+        let modal = document.getElementById("ExampleGraph");
+        modal.style.display = "block";
+        ShowModalWindow(modal, "closeExampleGraph");
+
+        //Неориентированный невзвешанный граф
+        document.getElementById('UndirectedUnweightedGraph').addEventListener('click', function() {
+            visualizer.graph.ExampleGraph([0, 0, 0, 0, 0, 0, 0, 0, 0], "false");
+            document.getElementById("direction").value = "false";
+            modal.style.display = "none";
+            UpdateGraph();
+        })
+
+        //Неориентированный взвешанный граф
+        document.getElementById('UndirectedWeightedGraph').addEventListener('click', function() {
+            visualizer.graph.ExampleGraph([3, 4, 5, 1, 2, 8, 9, 2, 5], "false");
+            document.getElementById("direction").value = "false";
+            modal.style.display = "none";
+            UpdateGraph();
+        })
+
+        //Ориентированный невзвешанный граф
+        document.getElementById('DirectedUnweightedGraph').addEventListener('click', function() {
+            visualizer.graph.ExampleGraph([0, 0, 0, 0, 0, 0, 0, 0, 0], "true");
+            document.getElementById("direction").value = "true";
+            modal.style.display = "none";
+            UpdateGraph();
+        })
+
+        //Ориентированный невзвешанный граф
+        document.getElementById('DirectedWeightedGraph').addEventListener('click', function() {
+            visualizer.graph.ExampleGraph([3, 4, 5, 1, 2, 8, 9, 2, 5], "true");
+            document.getElementById("direction").value = "true";
+            modal.style.display = "none";
+            UpdateGraph();
+        })
+    });
+
+    //Добавление вершины
+    document.getElementById('addNode').addEventListener('click', function() {
+        let lenNodes= visualizer.graph.GetCountNodes();
+        visualizer.graph.AddNode(Math.random() * 500, Math.random() * 500)
+        if (lenNodes != visualizer.graph.GetCountNodes()){
+            visualizer.AddNodeCY(visualizer.graph.Nodes[visualizer.graph.GetCountNodes()-1]);
+        }
+        changeGraph();
+    });
+
+    //Добавление ребра
+    document.getElementById('addEdge').addEventListener('click', function() {
+        if (visualizer.graph.GetCountNodes() != 0){
+            let modal = document.getElementById("AddEdge");
+            modal.style.display = "block";
+            ShowModalWindow(modal, "closeAddEdge")
+
+            GetNodesList("NodesSourse");
+            GetNodesList("NodesTarget");
+
+            //Кнопка "Добавить ребро"
+            document.getElementById("addEdgeBtn").onclick = function() {
+                let selectedSourse = document.getElementById("NodesSourse").value;
+                let selectedTarget = document.getElementById("NodesTarget").value;
+                //Если не выбрана вершина, берём первую в списке
+                if (selectedSourse === null){
+                    selectedSourse = visualizer.graph.Nodes[0].NameNode;
+                }
+                if (selectedTarget === null){
+                    selectedTarget = visualizer.graph.Nodes[0].NameNode;
+                }
+                let lenEdges= visualizer.graph.GetCountEdges();
+                visualizer.graph.AddEdge(selectedSourse, selectedTarget);
+                if (lenEdges != visualizer.graph.GetCountEdges()){
+                    visualizer.AddEdgeCY(visualizer.graph.Edges[visualizer.graph.GetCountEdges()-1]);
+                }
+                changeGraph();
+                modal.style.display = "none";
+            }
+        }
+        else{
+            alert("В графе нет вершин")
+        }
+    });
+
+    //Направление рёбер
+    function сhangeDirection() {
+        const selectedDirection = document.getElementById('direction').value;
+        visualizer.graph.SetDirectionEdges(selectedDirection);
+        visualizer.SetDirectionEdgesCY(selectedDirection);
+    }
+
+    //Установить вес рёбер
+    document.getElementById('changeEdgeWeight').addEventListener('click', function()
+    {
+        if (visualizer.graph.GetCountEdges() != 0){
+            let modal = document.getElementById("EdgeWeight");
+            modal.style.display = "block";
+            ShowModalWindow(modal, "closeEdgeWeight");
+            
+            GetEdgesList();
+
+            //Кнопка установить вес
+            document.getElementById("changeWeightBtn").onclick = function() {
+                let selectedEdge = document.getElementById("Edges").value;
+                //Если не выбрано ребро, берём первое в списке
+                if (selectedEdge === null){
+                    selectedEdge = visualizer.graph.Edges[0].NameEdge;
+                }
+                let newWeight = document.getElementById("newWeight").value;
+                //Проверяем, чтобы пользователь ввёл значение веса
+                if (newWeight != ""){
+                    if (newWeight >= 0 & newWeight <= 1000){
+                        for (let edge of visualizer.graph.Edges){
+                            if (edge.NameEdge == selectedEdge){
+                                //Устанавливаем вес ребра
+                                edge.SetEdgeWeight(Number(newWeight));
+                                UpdateGraph();
+                                modal.style.display = "none";
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        alert("Введите число от 0 до 1000")
+                    }
+                }
+                else{
+                    alert("Введите число от 0 до 1000")
+                }
+                document.getElementById("newWeight").value = ""; 
+            };
+        }
+        else{
+            alert("В графе нет рёбер")
+        }
+    })
+
+    //Матрица смежности
+    document.getElementById('getAdjacencyMatrix').addEventListener('click', function() {
+        if (visualizer.graph.GetCountNodes() != 0){
+            let modal = document.getElementById("AdjacencyMatrix");
+            modal.style.display = "block";
+            ShowModalWindow(modal, "closeAdjacencyMatrix");
+
+            document.getElementById('adjacencyMatrix').innerHTML = "";
+            let adjacencyMatrixTable = document.getElementById('adjacencyMatrix');
+            let adjacencyMatrix = visualizer.graph.GetAdjacencyMatrix();
+
+            //Создание заголовков с названиями вершин
+            let headerRow = document.createElement('tr');
+            let headerCell = document.createElement('th');
+            headerRow.appendChild(headerCell);
+            for (let i = 0; i < visualizer.graph.GetCountNodes(); i++) { 
+                let nodeName = document.createElement('th');
+                nodeName.textContent = visualizer.graph.Nodes[i].NameNode; 
+                headerRow.appendChild(nodeName); 
+            } 
+            adjacencyMatrixTable.appendChild(headerRow); 
+
+            //Заполнение таблицы смежности
+            for (let i = 0; i < visualizer.graph.GetCountNodes(); i++) { 
+                let row = document.createElement('tr'); 
+                let nodeNumber = document.createElement('th');
+                nodeNumber.textContent = visualizer.graph.Nodes[i].NameNode; 
+                row.appendChild(nodeNumber);
+                for (let j = 0; j < visualizer.graph.GetCountNodes(); j++) { 
+                    let cell = document.createElement('td'); 
+                    cell.textContent = adjacencyMatrix[i][j]; 
+                    row.appendChild(cell); 
+                } 
+                adjacencyMatrixTable.appendChild(row); 
+            }
+        }
+        else{
+            alert("В графе нет вершин")
+        }
+    })
+
+    //Матрица инцидентности
+    document.getElementById('getIncidenceMatrix').addEventListener('click', function() {
+        if (visualizer.graph.GetCountNodes() != 0 & visualizer.graph.GetCountEdges() != 0){
+            let modal = document.getElementById("IncidenceMatrix");
+            modal.style.display = "block";
+            ShowModalWindow(modal, "closeIncidenceMatrix");
+
+            document.getElementById('incidenceMatrix').innerHTML = "";
+            let incidenceMatrixTable = document.getElementById('incidenceMatrix');
+            let incidenceMatrix = visualizer.graph.GetIncidenceMatrix();
+
+            //Создание заголовков с названиями рёбер
+            let headerRow = document.createElement('tr');
+            let headerCell = document.createElement('th');
+            headerRow.appendChild(headerCell);
+            for (let i = 0; i < visualizer.graph.GetCountEdges(); i++) { 
+                let edgeName = document.createElement('th');
+                edgeName.textContent = visualizer.graph.Edges[i].NameEdge; 
+                headerRow.appendChild(edgeName); 
+            } 
+            incidenceMatrixTable.appendChild(headerRow); 
+
+            //Заполнение таблицы инцидентности
+            for (let i = 0; i < visualizer.graph.GetCountNodes(); i++) { 
+                let row = document.createElement('tr'); 
+                let nodeNumber = document.createElement('th');
+                nodeNumber.textContent = visualizer.graph.Nodes[i].NameNode; 
+                row.appendChild(nodeNumber);
+                for (let j = 0; j < visualizer.graph.GetCountEdges(); j++) { 
+                    let cell = document.createElement('td'); 
+                    cell.textContent = incidenceMatrix[i][j]; 
+                    row.appendChild(cell); 
+                } 
+                incidenceMatrixTable.appendChild(row); 
+            }
+        }
+        else{
+            alert("Заполните граф вершинами и рёбрами");
+        }
+    })
+
+
+    //Выбор алгоритма
+    function chooseAlgorithm(){
+        const selectedAlgorithm = document.getElementById('algorithm').value; //Нужный алгоритм
+        localStorage.setItem('graph', JSON.stringify(visualizer.graph)); //Запоминаем текущий граф
+        //Проверяем, связный ли граф
+        if (visualizer.graph.isConnectedGraph()){
+            if (selectedAlgorithm == "kruskal"){
+                //Проверяем, взвешенный, неориентированный ли граф
+                if (visualizer.graph.WeightСheck() != 0 & visualizer.graph.Direction == "false"){
+                    window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm;
+                }
+                else{
+                    alert("Алгоритм Крускала применяется на взвешенном связном неориентированном графе");
+                }
+            }
+            if (selectedAlgorithm == "dijkstra"){
+                //Проверяем, взвешенный ли граф
+                if (visualizer.graph.WeightСheck() != 0){
+                    let modal = document.getElementById("DijkstraWindow");
+                    modal.style.display = "block";
+
+                    window.onclick = function(event) {
+                        if (event.target == modal) {
+                            modal.style.display = "none";
+                        }
+                    }
+                    
+                    document.getElementsByClassName("closeDijkstraWindow")[0].onclick = function() {
+                        modal.style.display = "none";
+                    }
+
+                    GetNodesList("NodesSourseDijkstra");
+                    GetNodesList("NodesTargetDijkstra");
+
+                    document.getElementById("runDijkstra").onclick = function() {
+                        let selectedSourse = document.getElementById("NodesSourseDijkstra").value;
+                        let selectedTarget = document.getElementById("NodesTargetDijkstra").value;
+                        if (selectedSourse != selectedTarget){
+                            //Если не выбрана вершина, берём первую в списке
+                        if (selectedSourse === null){
+                            selectedSourse = visualizer.graph.Nodes[0].NameNode;
+                        }
+                        if (selectedTarget === null){
+                            selectedTarget = visualizer.graph.Nodes[0].NameNode;
+                        }
+                        modal.style.display = "none";
+                        window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm + "&sourse=" + selectedSourse + "&target=" + selectedTarget;
+                        }
+                    }
+                }
+                else{
+                    alert("Алгоритм Дейкстры применяется на взвешенном связном графе");
+                }
+            }
+            if (selectedAlgorithm == "demucron"){
+                //Проверяем, ориентированный, без циклов ли граф
+                if (visualizer.graph.Direction == "true" & (!visualizer.graph.HasCycle(visualizer.graph.Edges.map(edge => edge.NameEdge)))){
+                    window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm;
+                }
+                else{
+                    alert("Алгоритм Демукрона применяется на ориентированном графе без циклов")
+                }
+            }
+        }
+        else{
+            alert("Граф несвязный");
+        }
+        document.getElementById('algorithm').innerHTML += '';
+    }
+
+    //Очистить граф
+    document.getElementById('clearGraph').addEventListener('click', function() {
+        let graph = new Graph();
+        visualizer.graph = graph;
+        UpdateGraph();
+    })
+
+    //Изменение описания после изменения графа
+    function changeGraph(){
+        document.getElementById("descriptionGraph").innerText = "";
+        document.getElementById("descriptionGraph").innerText += "Количество вершин: " + visualizer.graph.GetCountNodes() + "\n";
+        document.getElementById("descriptionGraph").innerText += "Количество рёбер: " + visualizer.graph.GetCountEdges() + "\n";
+
+        if (visualizer.graph.HasCycle(visualizer.graph.Edges.map(edge => edge.NameEdge))) document.getElementById("descriptionGraph").innerText += "Граф содержит цикл\n";
+        else document.getElementById("descriptionGraph").innerText += "В графе нет циклов\n";
+
+        if (visualizer.graph.GetCountNodes()==0) document.getElementById("descriptionGraph").innerText += "\n";
+        else if (visualizer.graph.isConnectedGraph()) document.getElementById("descriptionGraph").innerText += "Граф связный\n";
+        else document.getElementById("descriptionGraph").innerText += "Граф несвязный\n";
+    }
+
+    </script>
+</body>
+</html>

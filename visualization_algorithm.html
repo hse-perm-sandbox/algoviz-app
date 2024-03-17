@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.9.4/cytoscape.min.js"></script>
+    <script src="./scripts/Node.js"></script>
+    <script src="./scripts/Edge.js"></script>
+    <script src="./scripts/Graph.js"></script>
+    <script src="./scripts/GraphVisualizer.js"></script>
+    <script src="./scripts/Algorithm.js"></script>
+    <title>Визуализация применения алгоритма на графе</title>
+</head>
+<body>
+    <div class="visualization">
+        <div class="control"><button id="return">Вернуться к созданию графа</button></div>
+        <div id="cy_frozen"></div>
+        <div id="control">
+            <div class="control"><button id="StartStep">В начало</button></div>
+            <div class="control"><button id="PreviosStep">Назад</button></div>
+            <div class="control"><button id="NextStep">Вперёд</button></div>
+            <div class="control"><button id="EndStep">В конец</button></div>
+        </div>
+    </div>
+    <div class="description">
+        <h2>Описание выполнения хода алгоритма:</h2>
+        <p id="descriptionStep"></p>
+        <div id="control">
+            <div class="control"><button id="descriptionAlgorithm" onclick="descriptionAlgorithm()">Описание алгоритма</button></div>
+            <div class="control"><button id="downloadResult" onclick="downloadResult()">Скачать текущий шаг</button></div>
+        </div>
+    </div>
+
+    <div id="DescriptionAlgorithm" class="modal">
+        <div class="modal-content">
+            <span class="closeDescriptionAlgorithm">&times;</span>
+            <p id="algorithm-description"></p>
+        </div>
+    </div>
+
+    <script>
+        // Получаем текущий URL
+        const url = new URL(window.location.href);
+
+        // Получаем параметры после знака вопроса
+        const params = new URLSearchParams(url.search);
+
+        // Извлекаем значение параметра по его имени
+        let args = []
+        const value = params.get('algorithm');
+        if (value == "dijkstra"){
+            args.push(params.get('sourse'));
+            args.push(params.get('target'));
+        }
+
+        let startGraph = JSON.parse(localStorage.getItem('graph'));
+        
+        let algorithm = new Algorithm(startGraph, value, args);
+        
+        let index = 0;
+        //Создаём объект класса GraphVisualizer (graph, cy)
+        let visualizer = new GraphVisualizer('cy_frozen');
+        visualizer.graph = algorithm.StatesGraph[index];
+        visualizer.VisualizeGraph();
+        visualizer.cy.fit(visualizer.cy.elements(), 50);
+        let paragraph = document.getElementById('descriptionStep');
+        paragraph.innerText = algorithm.DescriptionSteps[index];
+
+        document.getElementById("StartStep").onclick = function() {
+            index = 0;
+            ShowStepAlgorithm(index);
+        }
+
+        document.getElementById("PreviosStep").onclick = function() {
+            if (index != 0){
+                index -= 1;
+                ShowStepAlgorithm(index);
+            }
+        }
+
+        document.getElementById("NextStep").onclick = function() {
+            if (algorithm.NumberSteps-1 != index){
+                index += 1;
+                ShowStepAlgorithm(index);
+            }
+        }
+
+        document.getElementById("EndStep").onclick = function() {
+            index = algorithm.NumberSteps-1
+            ShowStepAlgorithm(index);
+        }
+
+        function ShowStepAlgorithm(index){
+            visualizer.graph = algorithm.StatesGraph[index];
+            visualizer.VisualizeGraph();
+            visualizer.cy.fit(visualizer.cy.elements(), 50);
+            paragraph.innerText = algorithm.DescriptionSteps[index];
+        }
+
+        function descriptionAlgorithm() {
+            var modal = document.getElementById("DescriptionAlgorithm");
+            modal.style.display = "block";
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                            modal.style.display = "none";
+                }
+            }
+                    
+            document.getElementsByClassName("closeDescriptionAlgorithm")[0].onclick = function() {
+                modal.style.display = "none";
+            }
+
+            var algorithmDescription = document.getElementById("algorithm-description");
+
+            let nameFile = "./descriptionAlgorithm/" + value + ".txt";
+            fetch(nameFile)
+            .then(response => response.text())
+            .then(data => {
+                algorithmDescription.innerText = data;
+                modal.style.display = "block";
+            });
+        }
+
+        function downloadResult(){
+            visualizer.graph = algorithm.StatesGraph[index];
+            visualizer.VisualizeGraph();
+            var pngUrl = visualizer.cy.png({bg: 'white'});
+            var a = document.createElement('a');
+            a.href = pngUrl;
+            a.download = value + (index+1) + '.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        document.getElementById('return').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        })
+    </script>
+</body>
+</html>
