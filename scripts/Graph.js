@@ -192,15 +192,38 @@ class Graph {
 
     //Связный ли
     isConnectedGraph() {
-        let nodes = new Set();
-      
-        for (let edge of this.Edges){
-            nodes.add(edge.Sourse);
-            nodes.add(edge.Target);
+        let graph = {};
+        for (let edge of this.Edges) {
+            let [start, end] = edge.NameEdge.split('_');
+            if (graph[start]) {
+                graph[start].push(end);
+            } else {
+                graph[start] = [end];
+            }
+            if (graph[end]) {
+                graph[end].push(start);
+            } else {
+                graph[end] = [start];
+            }
         }
-        
-        return nodes.size === this.GetCountNodes();
-      }
+
+        let visited = new Set();
+
+        function dfs(node) {
+            visited.add(node);
+            if (graph[node]) {
+                for (let neighbor of graph[node]) {
+                    if (!visited.has(neighbor)) {
+                        dfs(neighbor);
+                    }
+                }
+            }
+        }
+
+        dfs(this.Nodes[0].NameNode);
+
+        return visited.size === this.GetCountNodes();
+        }
 
     //Есть ли цикл в графе
     HasCycle(edges) {
