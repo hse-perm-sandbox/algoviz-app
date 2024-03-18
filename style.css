@@ -19,7 +19,8 @@ select {
     background: #f0f0f0;
     width: 250px;
     border-right: 2px solid #ccc;
-    height: 100%
+    height: 100%;
+    position: relative;
 }
 
 .menu ul {

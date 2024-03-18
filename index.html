@@ -148,6 +148,7 @@
 <script>
     //Создаём объект класса GraphVisualizer (graph, cy)
     let visualizer = new GraphVisualizer('cy');
+    document.getElementById("direction").value = "false";
 
     function UpdateGraph(){
         visualizer.VisualizeGraph(); //Визуализируем граф
@@ -484,56 +485,8 @@
     function chooseAlgorithm(){
         const selectedAlgorithm = document.getElementById('algorithm').value; //Нужный алгоритм
         localStorage.setItem('graph', JSON.stringify(visualizer.graph)); //Запоминаем текущий граф
-        //Проверяем, связный ли граф
-        if (visualizer.graph.isConnectedGraph()){
-            if (selectedAlgorithm == "kruskal"){
-                //Проверяем, взвешенный, неориентированный ли граф
-                if (visualizer.graph.WeightСheck() != 0 & visualizer.graph.Direction == "false"){
-                    window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm;
-                }
-                else{
-                    alert("Алгоритм Крускала применяется на взвешенном связном неориентированном графе");
-                }
-            }
-            if (selectedAlgorithm == "dijkstra"){
-                //Проверяем, взвешенный ли граф
-                if (visualizer.graph.WeightСheck() != 0){
-                    let modal = document.getElementById("DijkstraWindow");
-                    modal.style.display = "block";
-
-                    window.onclick = function(event) {
-                        if (event.target == modal) {
-                            modal.style.display = "none";
-                        }
-                    }
-                    
-                    document.getElementsByClassName("closeDijkstraWindow")[0].onclick = function() {
-                        modal.style.display = "none";
-                    }
-
-                    GetNodesList("NodesSourseDijkstra");
-                    GetNodesList("NodesTargetDijkstra");
-
-                    document.getElementById("runDijkstra").onclick = function() {
-                        let selectedSourse = document.getElementById("NodesSourseDijkstra").value;
-                        let selectedTarget = document.getElementById("NodesTargetDijkstra").value;
-                        if (selectedSourse != selectedTarget){
-                            //Если не выбрана вершина, берём первую в списке
-                        if (selectedSourse === null){
-                            selectedSourse = visualizer.graph.Nodes[0].NameNode;
-                        }
-                        if (selectedTarget === null){
-                            selectedTarget = visualizer.graph.Nodes[0].NameNode;
-                        }
-                        modal.style.display = "none";
-                        window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm + "&sourse=" + selectedSourse + "&target=" + selectedTarget;
-                        }
-                    }
-                }
-                else{
-                    alert("Алгоритм Дейкстры применяется на взвешенном связном графе");
-                }
-            }
+        if (visualizer.graph.GetCountNodes() != 0){
+            //Проверяем, связный ли граф
             if (selectedAlgorithm == "demucron"){
                 //Проверяем, ориентированный, без циклов ли граф
                 if (visualizer.graph.Direction == "true" & (!visualizer.graph.HasCycle(visualizer.graph.Edges.map(edge => edge.NameEdge)))){
@@ -543,11 +496,65 @@
                     alert("Алгоритм Демукрона применяется на ориентированном графе без циклов")
                 }
             }
+            else if (visualizer.graph.isConnectedGraph()){
+                if (selectedAlgorithm == "kruskal"){
+                    //Проверяем, взвешенный, неориентированный ли граф
+                    if (visualizer.graph.WeightСheck() != 0 & visualizer.graph.Direction == "false"){
+                        window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm;
+                    }
+                    else{
+                        alert("Алгоритм Крускала применяется на взвешенном связном неориентированном графе");
+                    }
+                }
+                if (selectedAlgorithm == "dijkstra"){
+                    //Проверяем, взвешенный ли граф
+                    if (visualizer.graph.WeightСheck() != 0){
+                        let modal = document.getElementById("DijkstraWindow");
+                        modal.style.display = "block";
+
+                        window.onclick = function(event) {
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
+                        }
+                        
+                        document.getElementsByClassName("closeDijkstraWindow")[0].onclick = function() {
+                            modal.style.display = "none";
+                        }
+
+                        GetNodesList("NodesSourseDijkstra");
+                        GetNodesList("NodesTargetDijkstra");
+
+                        document.getElementById("runDijkstra").onclick = function() {
+                            let selectedSourse = document.getElementById("NodesSourseDijkstra").value;
+                            let selectedTarget = document.getElementById("NodesTargetDijkstra").value;
+                            if (selectedSourse != selectedTarget){
+                                //Если не выбрана вершина, берём первую в списке
+                            if (selectedSourse === null){
+                                selectedSourse = visualizer.graph.Nodes[0].NameNode;
+                            }
+                            if (selectedTarget === null){
+                                selectedTarget = visualizer.graph.Nodes[0].NameNode;
+                            }
+                            modal.style.display = "none";
+                            window.location.href = "visualization_algorithm.html?algorithm=" + selectedAlgorithm + "&sourse=" + selectedSourse + "&target=" + selectedTarget;
+                            }
+                        }
+                    }
+                    else{
+                        alert("Алгоритм Дейкстры применяется на взвешенном связном графе");
+                    }
+                }
+            }
+            else{
+                alert("Граф несвязный");
+            }
+            document.getElementById('algorithm').innerHTML += '';
         }
         else{
-            alert("Граф несвязный");
+            alert("Создайте граф");
+            document.getElementById('algorithm').innerHTML += '';
         }
-        document.getElementById('algorithm').innerHTML += '';
     }
 
     //Очистить граф
